@@ -724,6 +724,7 @@ private fun savePersistedParameters() {
                 " innov=${String.format("%.1f", innovation)}, |ν|/σ=${String.format("%.1f", abs(norm))}," +
                 " qScale=${String.format("%.1f", qScale)}," +
                 " P[0]=${String.format("%.1f", P[0])}, P[3]=${String.format("%.4f", P[3])}"
+                " timestamp=${data[i].timestamp}"
             )
 
             val resultIdx = i - startIdx
