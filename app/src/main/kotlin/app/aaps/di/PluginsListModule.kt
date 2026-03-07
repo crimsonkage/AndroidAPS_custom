@@ -74,7 +74,6 @@ import dagger.Module
 import dagger.multibindings.IntKey
 import dagger.multibindings.IntoMap
 import info.nightscout.pump.combov2.ComboV2Plugin
-import app.aaps.plugins.smoothing.UnscentedKalmanFilterPlugin
 import javax.inject.Qualifier
 
 @Suppress("unused")
@@ -495,11 +494,7 @@ abstract class PluginsListModule {
     @IntKey(610)
     abstract fun bindAvgSmoothingPlugin(plugin: AvgSmoothingPlugin): PluginBase
 
-    @Binds
-    @AllConfigs
-    @IntoMap
-    @IntKey(615)
-    abstract fun bindUnscentedKalmanFilterPlugin(plugin: UnscentedKalmanFilterPlugin): PluginBase
+
     @Qualifier
     annotation class AllConfigs
 
