@@ -160,7 +160,7 @@ open class OpenAPSAutoISFPlugin @Inject constructor(
     private val exerciseMode; get() = SMBDefaults.exercise_mode
     private val highTemptargetRaisesSensitivity; get() = preferences.get(BooleanKey.ApsAutoIsfHighTtRaisesSens)
     val mgdlHalfBasalExerciseTarget;  get() = preferences.get(UnitDoubleKey.ApsAutoIsfHalfBasalExerciseTarget) * if (profileFunction.getUnits() == GlucoseUnit.MMOL) GlucoseUnit.MMOLL_TO_MGDL else 1.0
-    val normalTarget = 100
+    val normalTarget = Constants.NORMAL_TARGET_MGDL
     val calibrationDuration = preferences.get(IntKey.FslCalibrationDuration)
     private val minutesClass; get() = if (preferences.get(IntKey.ApsMaxSmbFrequency) == 1) 6L else 30L  // ga-zelle: later get correct 1 min CGM flag from glucoseStatus ? ... or from apsResults?
     private val disposable = CompositeDisposable()
@@ -639,7 +639,7 @@ open class OpenAPSAutoISFPlugin @Inject constructor(
 
     fun activityMonitor(isTempTarget: Boolean, bg: Double, target_bg: Double, now: Int): Double
     {
-       if (preferences.get(BooleanKey.ActivityMonitorShowStepsFromSmartphone)) {
+        if (preferences.get(BooleanKey.ActivityMonitorShowStepsFromSmartphone)) {
             val nowMillis = System.currentTimeMillis()
             val stepsCount = SC(
                 duration = 0,
@@ -671,7 +671,7 @@ open class OpenAPSAutoISFPlugin @Inject constructor(
         val useSleepState = automationStateService.inState("Sleeping", "True")
         aapsLogger.debug(LTag.APS, "State json for Sleep mode: {\"Sleeping\":\"${automationStateService.getState("Sleeping")}\"}")
         // really still sleeping?
-            if (useSleepState && (recentSteps5Minutes+recentSteps10Minutes+recentSteps15Minutes < recentSteps30Minutes) && now>=inactivity_idle_end) {
+        if (useSleepState && (recentSteps5Minutes+recentSteps10Minutes+recentSteps15Minutes == recentSteps30Minutes) ) {     //no steps between 15m and 30m; was: && now>=inactivity_idle_end) {
             automationStateService.setState("query_got_up", "query_it")
         }
         aapsLogger.debug(LTag.APS, "State json for got up query: {\"query_got_up\":\"${automationStateService.getState("query_got_up")}\"}")
