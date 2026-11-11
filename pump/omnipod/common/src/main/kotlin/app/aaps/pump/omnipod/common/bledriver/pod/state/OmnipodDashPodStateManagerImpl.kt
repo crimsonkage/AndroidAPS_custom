@@ -291,10 +291,10 @@ class OmnipodDashPodStateManagerImpl(
             logger.error(LTag.PUMP, "Invalid time period: startTime=$startTime > endTime=$endTime")
             return null
         }
-        
+
         // Build set of time boundaries where rate changes
         val boundaries = mutableSetOf(startTime, endTime)
-        
+
         // Add temp basal start/end if within period
         tempBasal?.let { tb ->
             val tempStart = tb.startTime
@@ -302,19 +302,19 @@ class OmnipodDashPodStateManagerImpl(
             if (tempStart in startTime until endTime) boundaries.add(tempStart)
             if (tempEnd in startTime until endTime) boundaries.add(tempEnd)
         }
-        
+
         // Add basal program segment boundaries
         basalProgram?.segments?.forEach { segment ->
             // Calculate day boundaries in pod's local timezone, not UTC
 
             val dayStartLocal = ((startTime + timeZoneOffset) / 86400_000L) * 86400_000L - timeZoneOffset
             var segmentStart = dayStartLocal + segment.startSlotIndex.toLong() * 30 * 60_000L
-            
+
             // If segment already passed today, start checking tomorrow
             if (segmentStart <= startTime) {
                 segmentStart += 86400_000L
             }
-            
+
             // Add all occurrences of this segment boundary until endTime
             while (segmentStart < endTime) {
                 boundaries.add(segmentStart)
@@ -325,20 +325,20 @@ class OmnipodDashPodStateManagerImpl(
         // Offset to convert UTC epoch to pod-local time for rateAt (which uses device timezone internally)
         val deviceOffsetMs = TimeZone.getDefault().getOffset(startTime)
         val podTimeAdjustmentMs = timeZoneOffset - deviceOffsetMs
-        
+
         // Integrate over each segment
         return boundaries.sorted().windowed(2).mapIndexed { index, (boundaryStart, boundaryEnd) ->
             val segmentHours = (boundaryEnd - boundaryStart) / 3600_000.0
             val segmentMid = (boundaryStart + boundaryEnd) / 2
-            
+
             // Get rate: temp basal if active at midpoint, otherwise scheduled basal program
             val rate = tempBasal?.let { tb ->
                 val tempBasalEnd = tb.startTime + tb.durationInMinutes * 60_000L
                 tb.rate.takeIf { segmentMid in tb.startTime until tempBasalEnd }
             } ?: basalProgram?.rateAt(segmentMid + podTimeAdjustmentMs) ?: return null  // Abort if rate unknown
-            
+
             val delivery = rate * segmentHours
-            
+
             logger.debug(
                 LTag.PUMP,
                 "  segment ${index + 1}/${boundaries.size - 1}: ${segmentHours * 3600}s @ ${rate}U/h = ${"%.4f".format(delivery)}U"
@@ -351,7 +351,7 @@ class OmnipodDashPodStateManagerImpl(
 
     override fun needsBasalCorrection(): Boolean {
         val correctionThreshold = -PodConstants.POD_PULSE_BOLUS_UNITS / 2  // -0.025U
-        
+
         if (!isActivationCompleted) return false  // Don't correct during activation/priming
         if (isSuspended || isPodKaput) return false
 
@@ -737,7 +737,7 @@ class OmnipodDashPodStateManagerImpl(
         newBolusPulsesRemaining: Short
     ): Short {
         var increase = newTotalPulses - previousTotalPulses
-        
+
         // Cap increase if we know the expected bolus pulse decrease
         if (previousBolusPulsesRemaining != null) {
             val expectedIncrease = previousBolusPulsesRemaining - newBolusPulsesRemaining
@@ -761,7 +761,7 @@ class OmnipodDashPodStateManagerImpl(
                 }
             }
         }
-        
+
         return increase.toShort()
     }
 
@@ -825,7 +825,7 @@ class OmnipodDashPodStateManagerImpl(
                 basalProgram = basalProgram
             )?.let { delta -> it + delta }
         } ?: basalDelivered.takeIf { isActivationCompleted }
-        
+
         // Update bolus pulses delivered (exclude basal corrections)
         podState.bolusPulsesDelivered = podState.bolusPulsesDelivered?.let {
             podState.pulsesDelivered
@@ -876,7 +876,7 @@ class OmnipodDashPodStateManagerImpl(
 
     override fun updateFromDefaultStatusResponse(response: DefaultStatusResponse) {
         logger.debug(LTag.PUMPCOMM, "Default status response :$response")
-        
+
         logBasalTracking {
             updatePodState(
                 response.deliveryStatus,
@@ -892,7 +892,7 @@ class OmnipodDashPodStateManagerImpl(
                 podState.activationTime = podState.lastUpdatedSystem - (response.minutesSinceActivation * 60_000)
             }
         }
-        
+
         store()
         rxBus.send(EventOmnipodDashPumpValuesChanged())
     }
@@ -946,7 +946,7 @@ class OmnipodDashPodStateManagerImpl(
 
     override fun updateFromAlarmStatusResponse(response: AlarmStatusResponse) {
         logger.info(LTag.PUMPCOMM, "Received AlarmStatusResponse: $response")
-        
+
         logBasalTracking {
             updatePodState(
                 response.deliveryStatus,
@@ -965,7 +965,7 @@ class OmnipodDashPodStateManagerImpl(
                 podState.pdmRef = response.pdmRef
             }
         }
-        
+
         store()
         rxBus.send(EventOmnipodDashPumpValuesChanged())
     }
@@ -1067,7 +1067,7 @@ class OmnipodDashPodStateManagerImpl(
 
         var bolusPulsesDelivered: Short? = null,  // Cumulative count of bolus pulses for basal tracking
         var basalExpected: Double? = null,  // Initialized to actual on first drift calculation
-        
+
         var lastBasalCorrectionTime: Long? = null,  // Timestamp of last basal correction attempt (for cooldown)
         @Transient var basalCorrectionInProgress: Boolean = false  // Transient flag: true while basal correction is delivering
     ) : Serializable

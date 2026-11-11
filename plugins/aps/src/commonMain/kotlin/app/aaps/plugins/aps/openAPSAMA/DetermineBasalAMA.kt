@@ -221,6 +221,7 @@ class DetermineBasalAMA(
         rT = RT(
             algorithm = APSResult.Algorithm.AMA,
             runningDynamicIsf = false,
+            runningAutoIsf = false,
             timestamp = currentTime,
             bg = bg,
             tick = tick,

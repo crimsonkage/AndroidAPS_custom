@@ -32,9 +32,10 @@ class TriggerStepsCount(deps: TriggerDeps) : Trigger(deps) {
 
         // Steps count entries update every 1-1.5 minutes on my watch,
         // so we must get some entries from the last 5 minutes.
-        val start = dateUtil.now() - 5 * 60 * 1000L
+        val start = dateUtil.now() - 1 * 60 * 1000L     // if longer ago then older data are picked
         val measurements = persistenceLayer.getStepsCountFromTime(start)
-        val lastSC = measurements.lastOrNull { it.duration == measurementDuration.value.toInt() * 60 * 1000L }
+        aapsLogger.info(LTag.AUTOMATION, "Steps count measurement content is - ${measurements}")
+        val lastSC = measurements.lastOrNull { true }   //it.duration == 0L }  //measurementDuration.value.toInt() * 60 * 1000L }
         if (lastSC == null) {
             aapsLogger.info(LTag.AUTOMATION, "No steps count measurements available - ${friendlyDescription()}")
             return false
@@ -56,7 +57,7 @@ class TriggerStepsCount(deps: TriggerDeps) : Trigger(deps) {
         }
 
         return comparator.value.check(lastStepsCount.toDouble(), stepsCount.value).also {
-            aapsLogger.info(LTag.AUTOMATION, "Steps count ${if (it) "" else "not "}ready for $lastStepsCount in ${measurementDuration.value} minutes for ${friendlyDescription()}")
+            aapsLogger.info(LTag.AUTOMATION, "Steps count ${if (it) "" else "not "}from ${lastSC.device} ready for $lastStepsCount in ${measurementDuration.value} minutes for ${friendlyDescription()}")
         }
     }
 
